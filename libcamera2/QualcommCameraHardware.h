@@ -25,10 +25,10 @@
 
 extern "C" {
 #include <linux/android_pmem.h>
-#include <media/msm_camera.h>
+#include "msm_camera.h"
 }
 
-#define MSM_CAMERA_CONTROL "/dev/msm_camera/control0"
+#define MSM_CAMERA_CONTROL "/dev/msm_camera/msm_camera0"
 #define JPEG_EVENT_DONE 0 /* guess */
 
 #define CAM_CTRL_SUCCESS 1
@@ -174,7 +174,7 @@ public:
     static sp<CameraHardwareInterface> createInstance();
     static sp<QualcommCameraHardware> getInstance();
 
-    void receivePreviewFrame(struct msm_frame *frame);
+    void receivePreviewFrame(struct msm_frame_t *frame);
     void receiveJpegPicture(void);
     void jpeg_set_location();
     void receiveJpegPictureFragment(uint8_t *buf, uint32_t size);
@@ -202,6 +202,7 @@ private:
     static const int kPreviewBufferCount = 4;
     static const int kRawBufferCount = 1;
     static const int kJpegBufferCount = 1;
+    static const int kRawFrameHeaderSize = 0;
 
     //TODO: put the picture dimensions in the CameraParameters object;
     CameraParameters mParameters;
@@ -212,6 +213,7 @@ private:
     unsigned int frame_size;
     bool mCameraRunning;
     bool mPreviewInitialized;
+    bool mRawInitialized;
 
     // This class represents a heap which maintains several contiguous
     // buffers.  The heap may be backed by pmem (when pmem_pool contains
@@ -251,19 +253,30 @@ private:
 
     struct PmemPool : public MemPool {
         PmemPool(const char *pmem_pool,
-                 int control_camera_fd, int pmem_type,
+                 int control_camera_fd,
+                 msm_pmem_t pmem_type,
                  int buffer_size, int num_buffers,
                  int frame_size, int frame_offset,
                  const char *name);
         virtual ~PmemPool();
         int mFd;
-        int mPmemType;
+        msm_pmem_t mPmemType;
         int mCameraControlFd;
         uint32_t mAlignedSize;
         struct pmem_region mSize;
     };
 
-    sp<PmemPool> mPreviewHeap;
+    struct PreviewPmemPool : public PmemPool {
+        virtual ~PreviewPmemPool();
+        PreviewPmemPool(int control_fd,
+                        int buffer_size,
+                        int num_buffers,
+                        int frame_size,
+                        int frame_offset,
+                        const char *name);
+    };
+
+    sp<PreviewPmemPool> mPreviewHeap;
     sp<PmemPool> mThumbnailHeap;
     sp<PmemPool> mRawHeap;
     sp<AshmemPool> mJpegHeap;
@@ -325,6 +338,7 @@ private:
 
 #if DLOPEN_LIBMMCAMERA
     void *libmmcamera;
+    void *libmmcamera_target;
 #endif
 
     int mCameraControlFd;
@@ -339,7 +353,7 @@ private:
 
     common_crop_t mCrop;
 
-    struct msm_frame frames[kPreviewBufferCount];
+    struct msm_frame_t frames[kPreviewBufferCount];
     bool mInPreviewCallback;
     bool mCameraRecording;
 };
