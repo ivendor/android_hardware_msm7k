@@ -64,7 +64,6 @@ extern "C" {
 #define DEFAULT_PICTURE_WIDTH  2048
 #define DEFAULT_PICTURE_HEIGHT 1536
 #define THUMBNAIL_BUFFER_SIZE (THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT * 3/2)
-
 #define DEFAULT_PREVIEW_SETTING 5 // QVGA
 #define PREVIEW_SIZE_COUNT (sizeof(preview_sizes)/sizeof(preview_size_type))
 
@@ -269,8 +268,8 @@ void QualcommCameraHardware::initDefaultParameters()
     preview_size_type *ps = &preview_sizes[DEFAULT_PREVIEW_SETTING];
     p.setPreviewSize(ps->width, ps->height);
     p.setPreviewFrameRate(15);
-    p.setPreviewFormat("yuv420sp"); // informative
-    p.setPictureFormat("jpeg"); // informative
+    p.setPreviewFormat(CameraParameters::PIXEL_FORMAT_YUV420SP); // informative
+    p.setPictureFormat(CameraParameters::PIXEL_FORMAT_JPEG); // informative
 
     p.set("jpeg-quality", "100"); // maximum quality
     p.set("jpeg-thumbnail-width", THUMBNAIL_WIDTH_STR); // informative
@@ -278,9 +277,9 @@ void QualcommCameraHardware::initDefaultParameters()
     p.set("jpeg-thumbnail-quality", "85");
 
     p.setPictureSize(DEFAULT_PICTURE_WIDTH, DEFAULT_PICTURE_HEIGHT);
-    p.set("antibanding", "off");
-    p.set("effect", "none");
-    p.set("whitebalance", "auto");
+
+    p.set(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES, "2048x1536,1600x1200,1024x768");
+    p.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "320x240");
 
 #if 0
     p.set("gps-timestamp", "1199145600"); // Jan 1, 2008, 00:00:00
@@ -295,11 +294,20 @@ void QualcommCameraHardware::initDefaultParameters()
     INIT_VALUES_FOR(effect);
     INIT_VALUES_FOR(whitebalance);
 
-    p.set("antibanding-values", antibanding_values);
-    p.set("effect-values", effect_values);
-    p.set("whitebalance-values", whitebalance_values);
-    p.set("picture-size-values", "2048x1536,1600x1200,1024x768");
-    p.set("preview-size-values", "320x240");
+    p.set(CameraParameters::KEY_SUPPORTED_ANTIBANDING, antibanding_values);
+    p.set(CameraParameters::KEY_ANTIBANDING, CameraParameters::ANTIBANDING_OFF);
+
+    p.set(CameraParameters::KEY_SUPPORTED_EFFECTS, effect_values);
+    p.set(CameraParameters::KEY_EFFECT, CameraParameters::EFFECT_NONE);
+
+    p.set(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE, whitebalance_values);
+    p.set(CameraParameters::KEY_WHITE_BALANCE, CameraParameters::WHITE_BALANCE_AUTO);
+
+    p.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, CameraParameters::FLASH_MODE_OFF);
+    p.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_OFF);
+
+    p.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES, CameraParameters::FOCUS_MODE_FIXED);
+    p.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_FIXED);
 
     if (setParameters(p) != NO_ERROR) {
         LOGE("Failed to set default parameters?!");
