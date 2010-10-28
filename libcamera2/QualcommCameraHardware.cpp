@@ -804,6 +804,7 @@ bool QualcommCameraHardware::initPreview()
     bool ret = native_set_dimension(&mDimension);
 
     if (ret) {
+		iLog("startPreview Thread");
         for (int cnt = 0; cnt < kPreviewBufferCount; cnt++) {
             frames[cnt].fd = mPreviewHeap->mHeap->getHeapID();
             frames[cnt].buffer =
